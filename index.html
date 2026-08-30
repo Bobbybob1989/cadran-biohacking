@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadran (autonome) — Coach biohacking quotidien</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#10161A;
+    --panel:#171F24;
+    --panel-2:#1C262C;
+    --line:#28343B;
+    --text:#E9EDEC;
+    --muted:#8FA0A8;
+    --muted-2:#5E6E76;
+    --teal:#4BBFA6;
+    --teal-dim:#2C4A44;
+    --amber:#E3A855;
+    --amber-dim:#4A3D26;
+    --rust:#C8623E;
+    --rust-dim:#4A2C22;
+    --gold:#D8C48A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;
+    line-height:1.5;
+    padding-bottom:80px;
+  }
+  ::selection{background:var(--teal);color:#0A0F12;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  a{color:var(--teal);}
+
+  /* ---- Top bar ---- */
+  header.top{
+    position:sticky;top:0;z-index:20;
+    background:rgba(16,22,26,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:14px 20px;
+    display:flex;align-items:baseline;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;
+  }
+  header.top .brand{display:flex;align-items:baseline;gap:10px;}
+  header.top h1{font-size:22px;letter-spacing:0.2px;}
+  header.top .brand small{color:var(--muted-2);font-size:12px;text-transform:uppercase;letter-spacing:1.5px;}
+  header.top .date{color:var(--muted);font-size:13px;font-family:'IBM Plex Mono',monospace;text-transform:capitalize;}
+
+  nav.tab-nav{
+    position:sticky;top:57px;z-index:19;
+    background:rgba(16,22,26,0.97);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:0 20px;
+    display:flex;gap:4px;overflow-x:auto;
+  }
+  .tab-nav-btn{
+    background:transparent;border:none;color:var(--muted);
+    padding:13px 16px;font-size:13.5px;font-weight:500;
+    border-bottom:2px solid transparent;border-radius:0;white-space:nowrap;
+  }
+  .tab-nav-btn:hover{color:var(--text);opacity:1;}
+  .tab-nav-btn.active{color:var(--teal);border-bottom-color:var(--teal);}
+
+  main{max-width:1080px;margin:0 auto;padding:28px 20px 0;}
+
+  section{margin-bottom:34px;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:6px;}
+  .section-head h2{font-size:19px;color:var(--gold);}
+  .section-head .hint{color:var(--muted-2);font-size:12.5px;}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media (max-width:820px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+  /* ---- Conseil du jour ---- */
+  .advice{
+    display:grid;grid-template-columns:180px 1fr;gap:26px;align-items:center;
+    padding:24px;
+  }
+  @media (max-width:640px){.advice{grid-template-columns:1fr;justify-items:center;text-align:center;}}
+  .dial-wrap{position:relative;width:180px;height:180px;}
+  .dial-wrap svg{width:100%;height:100%;}
+  .dial-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .dial-center .val{font-size:34px;font-weight:600;}
+  .dial-center .unit{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .advice-body .tag{
+    display:inline-block;padding:4px 11px;border-radius:20px;font-size:12px;
+    text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px;
+  }
+  .tag.teal{background:var(--teal-dim);color:var(--teal);}
+  .tag.amber{background:var(--amber-dim);color:var(--amber);}
+  .tag.rust{background:var(--rust-dim);color:var(--rust);}
+  .advice-body h3{font-size:23px;margin-bottom:8px;}
+  .advice-body p{color:var(--muted);margin:0 0 10px;font-size:14.5px;}
+  .advice-list{margin:0;padding-left:18px;color:var(--text);font-size:14px;}
+  .advice-list li{margin-bottom:4px;}
+  .no-data{color:var(--muted-2);font-style:italic;font-size:14px;}
+
+  /* ---- Forms ---- */
+  label{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;}
+  input,select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:7px;padding:9px 10px;font-family:'IBM Plex Mono',monospace;font-size:14px;
+  }
+  select{font-family:'IBM Plex Sans',sans-serif;}
+  input:focus,select:focus{outline:none;border-color:var(--teal);}
+  .field{margin-bottom:14px;}
+  .field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);margin-top:6px;}
+  .checkline input{width:auto;}
+
+  button{
+    cursor:pointer;border:none;border-radius:7px;font-family:'IBM Plex Sans',sans-serif;font-weight:600;
+    font-size:14px;padding:11px 18px;transition:opacity .15s;
+  }
+  button:hover{opacity:0.88;}
+  .btn-primary{background:var(--teal);color:#0A1512;}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted);}
+  .btn-ghost:hover{border-color:var(--muted);}
+  .btn-danger{background:transparent;border:1px solid var(--rust);color:var(--rust);}
+
+  /* ---- Progress / objectifs ---- */
+  .obj{margin-bottom:16px;}
+  .obj:last-child{margin-bottom:0;}
+  .obj-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+  .obj-top .name{color:var(--text);}
+  .obj-top .vals{color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+  .bar{height:7px;border-radius:4px;background:var(--panel-2);overflow:hidden;position:relative;}
+  .bar-fill{height:100%;border-radius:4px;background:var(--teal);transition:width .4s;}
+  .bar-marker{position:absolute;top:-3px;width:2px;height:13px;background:var(--muted-2);}
+
+  /* ---- Checklist / suppléments ---- */
+  .supp-group{margin-bottom:16px;}
+  .supp-group:last-child{margin-bottom:0;}
+  .supp-group .g-title{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted-2);margin-bottom:8px;}
+  .supp-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .supp-item:last-child{border-bottom:none;}
+  .supp-item input{width:auto;accent-color:var(--teal);}
+  .supp-item .dose{margin-left:auto;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .supp-item.non-neg .name::after{content:" ⚠";color:var(--amber);}
+
+  .rule-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .rule-item:last-child{border-bottom:none;}
+  .rule-item .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0;}
+  .rule-item.today .dot{background:var(--amber);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);}
+  th{color:var(--muted-2);font-weight:500;text-transform:uppercase;font-size:11px;letter-spacing:0.5px;}
+  td{font-family:'IBM Plex Mono',monospace;}
+  tr:hover td{background:var(--panel-2);}
+  .del-link{font-family:'IBM Plex Sans',sans-serif;color:var(--rust);cursor:pointer;font-size:12px;}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .tab-btn{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;}
+  .tab-btn.active{background:var(--teal-dim);color:var(--teal);border-color:var(--teal-dim);}
+
+  canvas{max-height:220px;}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--teal);color:#0A1512;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;
+    opacity:0;pointer-events:none;transition:all .25s;z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  footer{max-width:1080px;margin:40px auto 0;padding:20px;color:var(--muted-2);font-size:12px;text-align:center;border-top:1px solid var(--line);}
+
+  #printArea{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;color:#000;background:#fff;}
+    #printArea h1{font-size:20px;margin-bottom:4px;}
+    #printArea h2{font-size:15px;margin:18px 0 8px;border-bottom:1px solid #999;padding-bottom:4px;}
+    #printArea table{width:100%;border-collapse:collapse;font-size:11px;}
+    #printArea th,#printArea td{border:1px solid #ccc;padding:4px 6px;text-align:left;}
+    #printArea .meta{color:#555;font-size:12px;margin-bottom:14px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Cadran</h1>
+    <small>Coach biohacking quotidien</small>
+  </div>
+  <div class="date mono" id="todayLabel"></div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-nav-btn active" data-tab="today" onclick="switchTab('today')">Aujourd'hui</button>
+  <button class="tab-nav-btn" data-tab="portions" onclick="switchTab('portions')">Portions</button>
+  <button class="tab-nav-btn" data-tab="protocole" onclick="switchTab('protocole')">Protocole</button>
+  <button class="tab-nav-btn" data-tab="bilan" onclick="switchTab('bilan')">Bilan hebdo</button>
+  <button class="tab-nav-btn" data-tab="historique" onclick="switchTab('historique')">Historique</button>
+  <button class="tab-nav-btn" data-tab="reglages" onclick="switchTab('reglages')">⚙️ Réglages</button>
+</nav>
+
+<main>
+
+  <div class="tab-panel" data-tab="today">
+  <!-- CONSEIL DU JOUR -->
+  <section>
+    <div class="section-head">
+      <h2>Conseil du jour</h2>
+      <span class="hint">Basé sur ta HRV du réveil et ton protocole</span>
+    </div>
+    <div class="panel advice" id="advicePanel">
+      <div class="dial-wrap">
+        <svg viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="76" fill="none" stroke="#28343B" stroke-width="14"/>
+          <circle id="dialArc" cx="90" cy="90" r="76" fill="none" stroke="#4BBFA6" stroke-width="14"
+                  stroke-linecap="round" stroke-dasharray="477" stroke-dashoffset="477"
+                  transform="rotate(-90 90 90)"/>
+        </svg>
+        <div class="dial-center">
+          <div class="val mono" id="dialVal">—</div>
+          <div class="unit">HRV ms</div>
+        </div>
+      </div>
+      <div class="advice-body" id="adviceBody">
+        <span class="tag teal">En attente</span>
+        <h3>Entre ta HRV du réveil pour démarrer</h3>
+        <p class="no-data">Aucune donnée enregistrée pour aujourd'hui — remplis le relevé du jour ci-dessous.</p>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:14px;font-weight:600;">Monica — avis approfondi</div>
+          <div class="hint" style="color:var(--muted-2);font-size:12.5px;">Croise plusieurs jours de données et répond aux questions ouvertes</div>
+        </div>
+        <button class="btn-primary" id="monicaBtn" onclick="askMonica()">🤖 Demander à Monica</button>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label>Question à poser (optionnel — sinon Monica commente ta journée)</label>
+        <input type="text" id="monicaQuestion" placeholder="ex : pourquoi ma HRV stagne cette semaine ?">
+      </div>
+      <div id="monicaAnswer" style="display:none;margin-top:12px;padding:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;font-size:14px;white-space:pre-wrap;line-height:1.6;"></div>
+    </div>
+  </section>
+
+  <!-- SAISIE DU JOUR -->
+  <section>
+    <div class="section-head">
+      <h2>Relevé du jour</h2>
+      <span class="hint">Données Polar &amp; Yazio — saisie manuelle</span>
+    </div>
+    <div class="panel">
+      <div class="grid2">
+        <div>
+          <div class="g-title" style="color:var(--muted-2);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Polar</div>
+          <div class="field-row">
+            <div class="field"><label>HRV réveil (ms)</label><input type="number" id="in_hrv" step="0.1" placeholder="38"></div>
+            <div class="field"><label>Score sommeil profond Polar (/100)</label><input type="number" id="in_sleepScore" step="1" placeholder="13"></div>
+            <div class="field"><label>Durée sommeil nette (h, hors réveils)</label><input type="number" id="in_sleepDur" step="0.1" placeholder="6.5"></div>
+            <div class="field"><label>Réveils nocturnes (nombre)</label><input type="number" id="in_wakeups" step="1" placeholder="0"></div>
+            <div class="field"><label>Sommeil léger (%)</label><input type="number" id="in_sleepLight" step="1" placeholder="55"></div>
+            <div class="field"><label>Sommeil REM (%)</label><input type="number" id="in_sleepRem" step="1" placeholder="20"></div>
+            <div class="field"><label>FC repos (bpm)</label><input type="number" id="in_restHR" step="1" placeholder="52"></div>
+            <div class="field"><label>Cadence course (spm)</label><input type="number" id="in_cadence" step="1" placeholder="165"></div>
+            <div class="field"><label>Distance séance (km)</label><input type="number" id="in_distance" step="0.1" placeholder="—"></div>
+            <div class="field"><label>Durée séance (min)</label><input type="number" id="in_duration" step="1" placeholder="—"></div>
+          </div>
+        </div>
+        <div>
+          <div class="g-title" style="color:var(--muted-2);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Yazio</div>
+          <div class="field-row">
+            <div class="field"><label>Poids (kg)</label><input type="number" id="in_weight" step="0.1" placeholder="—"></div>
+            <div class="field"><label>Calories</label><input type="number" id="in_cal" step="1" placeholder="—"></div>
+            <div class="field"><label>Protéines (g)</label><input type="number" id="in_prot" step="1" placeholder="—"></div>
+            <div class="field"><label>Glucides (g)</label><input type="number" id="in_carbs" step="1" placeholder="—"></div>
+            <div class="field"><label>Lipides (g)</label><input type="number" id="in_fat" step="1" placeholder="—"></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:6px;">
+        <div class="field">
+          <label>Séance du jour</label>
+          <select id="in_session">
+            <option value="">— aucune —</option>
+            <option>Runna Musculation</option>
+            <option>Runna Z2 facile</option>
+            <option>Runna qualité (fractionné/tempo)</option>
+            <option>Badminton</option>
+            <option>Sortie longue Runna</option>
+            <option>Repos actif / mobilité</option>
+            <option>Repos complet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Protéine principale du jour</label>
+          <select id="in_proteinSource">
+            <option value="">— non renseigné —</option>
+            <option>Poisson gras (saumon, maquereau, sardine, hareng)</option>
+            <option>Poisson blanc</option>
+            <option>Viande rouge</option>
+            <option>Volaille</option>
+            <option>Œufs</option>
+            <option>Légumineuses</option>
+            <option>Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="g-title" style="color:var(--muted-2);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:18px 0 8px;">Routine du soir &amp; récupération</div>
+      <div class="field-row" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));">
+        <div class="checkline"><input type="checkbox" id="in_coherence"><label style="margin:0;text-transform:none;font-size:14px;color:var(--text);" for="in_coherence">Cohérence cardiaque 21h15 (Polar Pacer)</label></div>
+        <div class="checkline"><input type="checkbox" id="in_gowod"><label style="margin:0;text-transform:none;font-size:14px;color:var(--text);" for="in_gowod">GoWod 21h30 (8 min)</label></div>
+        <div class="checkline"><input type="checkbox" id="in_coupure"><label style="margin:0;text-transform:none;font-size:14px;color:var(--text);" for="in_coupure">Coupure numérique 22h00 respectée</label></div>
+        <div class="checkline"><input type="checkbox" id="in_mobilite"><label style="margin:0;text-transform:none;font-size:14px;color:var(--text);" for="in_mobilite">Mobilité cheville droite (5 min)</label></div>
+        <div class="checkline"><input type="checkbox" id="in_legumes"><label style="margin:0;text-transform:none;font-size:14px;color:var(--text);" for="in_legumes">Légumes verts au dîner</label></div>
+      </div>
+
+      <div class="grid2" style="margin-top:6px;">
+        <div class="field">
+          <label>Alcool</label>
+          <select id="in_alcohol" onchange="toggleBedtimeField()">
+            <option value="none">Aucun</option>
+            <option value="light">1–2 verres (repas / resto entre amis)</option>
+            <option value="heavy">Soirée arrosée</option>
+          </select>
+        </div>
+        <div class="field" id="bedtimeField" style="display:none;">
+          <label>Heure de coucher (si tardive)</label>
+          <input type="text" id="in_bedtime" placeholder="ex : 04h30">
+        </div>
+      </div>
+      <div class="checkline"><input type="checkbox" id="in_charcuterie"><label style="margin:0;text-transform:none;font-size:14px;color:var(--text);" for="in_charcuterie">Charcuterie consommée aujourd'hui</label></div>
+      <div style="margin-top:18px;display:flex;gap:10px;">
+        <button class="btn-primary" onclick="saveToday()">Enregistrer le relevé</button>
+        <button class="btn-ghost" onclick="loadToday()">Recharger</button>
+      </div>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="tab-panel" data-tab="portions" style="display:none;">
+  <!-- GUIDE DES PORTIONS -->
+  <section>
+    <div class="section-head">
+      <h2>Guide des portions</h2>
+      <span class="hint">Quantités cibles par repas — Manuel §6</span>
+    </div>
+    <div class="panel">
+      <div class="field-row" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Repas</label>
+          <select id="in_mealType" onchange="renderPortionGuide()">
+            <option value="matin">Matin — petit-déjeuner</option>
+            <option value="midi">Midi — tartine</option>
+            <option value="soir">Soir — dîner</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Nombre de portions à cuisiner</label>
+          <input type="number" id="in_portions" value="1" min="1" step="1" onchange="renderPortionGuide()">
+        </div>
+      </div>
+      <div id="portionGuideOut"></div>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="tab-panel" data-tab="protocole" style="display:none;">
+  <!-- OBJECTIFS -->
+  <section>
+    <div class="section-head">
+      <h2>Objectifs vs cibles du protocole</h2>
+      <span class="hint">Moyenne des 7 derniers jours</span>
+    </div>
+    <div class="panel" id="objectivesPanel"></div>
+  </section>
+
+  <div class="grid2">
+    <!-- REGLES DU JOUR -->
+    <section>
+      <div class="section-head">
+        <h2>Règles non négociables</h2>
+      </div>
+      <div class="panel" id="rulesPanel"></div>
+    </section>
+
+    <!-- SUPPLEMENTS -->
+    <section>
+      <div class="section-head">
+        <h2>Stack du jour</h2>
+        <span class="hint" id="suppProgress"></span>
+      </div>
+      <div class="panel" id="suppPanel"></div>
+    </section>
+  </div>
+
+  </div>
+
+  <div class="tab-panel" data-tab="bilan" style="display:none;">
+  <!-- BILAN HEBDO -->
+  <section>
+    <div class="section-head">
+      <h2>Bilan hebdomadaire</h2>
+      <span class="hint">À faire dimanche soir — 10 minutes</span>
+    </div>
+    <div class="panel" id="weeklyPanel"></div>
+  </section>
+
+  </div>
+
+  <div class="tab-panel" data-tab="historique" style="display:none;">
+  <!-- TENDANCES -->
+  <section>
+    <div class="section-head">
+      <h2>Tendances</h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-range="14" onclick="setRange(14,this)">14 j</button>
+        <button class="tab-btn" data-range="30" onclick="setRange(30,this)">30 j</button>
+        <button class="tab-btn" data-range="90" onclick="setRange(90,this)">90 j</button>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="panel"><canvas id="chartHrv"></canvas></div>
+      <div class="panel"><canvas id="chartSleep"></canvas></div>
+      <div class="panel"><canvas id="chartWeight"></canvas></div>
+    </div>
+  </section>
+
+  <!-- HISTORIQUE -->
+  <section id="historySection">
+    <div class="section-head">
+      <h2>Historique</h2>
+      <button class="btn-ghost no-print" onclick="printReport()">🖨️ Imprimer le bilan</button>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Date</th><th>HRV</th><th>Sommeil</th><th>Poids</th><th>Séance</th><th>Calories</th><th></th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="tab-panel" data-tab="reglages" style="display:none;">
+  <!-- REGLAGES IA -->
+  <section>
+    <div class="section-head">
+      <h2>Réglages — clé API personnelle</h2>
+      <span class="hint">Nécessaire pour Monica en dehors de Claude.ai</span>
+    </div>
+    <div class="panel">
+      <p style="color:var(--muted);font-size:14px;margin:0 0 18px;">
+        Pour utiliser Monica sur cet appareil (téléphone, hébergement autonome), fournis ta propre clé API. Elle est stockée uniquement dans la mémoire de ce navigateur (localStorage) — jamais envoyée ailleurs qu'au fournisseur choisi ci-dessous.
+      </p>
+      <div class="field-row">
+        <div class="field">
+          <label>Fournisseur</label>
+          <select id="set_provider" onchange="updateModelPlaceholder()">
+            <option value="anthropic">Anthropic (Claude — direct)</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Modèle (optionnel — sinon valeur par défaut)</label>
+          <input type="text" id="set_model" placeholder="claude-sonnet-5">
+        </div>
+      </div>
+      <div class="field">
+        <label>Clé API</label>
+        <input type="password" id="set_apikey" placeholder="sk-ant-... / sk-or-... / sk-...">
+      </div>
+      <button class="btn-primary" onclick="saveSettingsForm()">Enregistrer les réglages</button>
+      <p style="color:var(--muted-2);font-size:12.5px;margin-top:14px;">
+        Anthropic : clé créée sur console.anthropic.com (compte API séparé de ton abonnement Claude.ai, facturé à l'usage).<br>
+        OpenRouter : un seul compte donne accès à plusieurs modèles, dont Claude.<br>
+        OpenAI : clé créée sur platform.openai.com.
+      </p>
+    </div>
+  </section>
+
+  </div>
+
+</main>
+
+<footer>Cadran (version autonome) — construit à partir de ton Manuel de Biohacking Personnel v2 (août 2026). Données stockées dans ce navigateur uniquement (localStorage) — pense à exporter/imprimer régulièrement si tu changes d'appareil.</footer>
+<div id="printArea"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ PROTOCOLE — constantes issues du manuel ============ */
+const TARGETS = {
+  hrv:   { current: 38, m3: 42, m12: 48, unit: 'ms' },
+  sleep: { current: 13, m3: 50, m12: 70, unit: '/100' },
+  weight: { unit: 'kg' }
+};
+const WEEK_PLAN = {
+  1: 'Runna Musculation + Runna facile Z2',
+  2: 'Badminton 2h',
+  3: 'Runna Musculation',
+  4: 'Runna Musculation + Runna facile Z2',
+  5: 'Repos',
+  6: 'Sortie longue Runna ⭐',
+  0: 'Repos actif, mobilité'
+};
+const NON_NEGOTIABLE = [
+  "Collation avant toute séance > 45 min — pain complet + protéine obligatoire",
+  "Créatine Creapure dans les 30 min post-effort — systématiquement",
+  "Mobilité cheville droite — 5 min/jour, tous les jours",
+  "Équilibre unipodal droit — en se brossant les dents, matin et soir",
+  "Jamais Runna Musculation et course de qualité le même jour",
+  "Respecter les allures Runna même si elles semblent trop lentes",
+  "Enregistrer les séances Runna Musculation dans Polar"
+];
+const SUPPLEMENTS = [
+  { g:'Au réveil (à jeun)', items:[
+    {id:'huile_olive', name:'Huile d\'olive polyphénolique', dose:'1 c.à.s.'}
+  ]},
+  { g:'Matin (avec petit-déjeuner)', items:[
+    {id:'sunday_ess', name:'Sunday Essentials Vitamins I', dose:'3 gélules'},
+    {id:'stem_am', name:'Stem Komplex', dose:'2 gélules'},
+    {id:'folate', name:'Acide Folique Quatrefolic®', dose:'2 gél. (800 µg)'},
+    {id:'coq10', name:'CoQ10 Ubiquinol 100 mg', dose:'1 gélule'},
+    {id:'iode', name:'Iode 100 µg (JOD 100)', dose:'1 gélule'},
+    {id:'znc', name:'Zinc + Cuivre + Manganèse', dose:'posologie produit'},
+    {id:'bore', name:'Bore 3 mg', dose:'1 comprimé'},
+    {id:'magtein', name:'L-Thréonate Mg Magtein®', dose:'2–3 gélules'},
+    {id:'phos', name:'Phosphatidylsérine', dose:'posologie produit'},
+    {id:'omega3', name:'Oméga-3', dose:'posologie produit'},
+    {id:'vitd', name:'Vitamine D3 gouttes', dose:'~3000 UI'},
+    {id:'citrulline', name:'L-Citrulline poudre', dose:'3 g'},
+    {id:'lysine', name:'L-Lysine poudre', dose:'1–2 g'},
+    {id:'psyllium', name:'Psyllium (dans eau)', dose:'5 g — 🔄 à introduire'},
+    {id:'cumin', name:'Huile de cumin noir', dose:'1 c.à.c — 🔄 à introduire'}
+  ]},
+  { g:'Midi (avec repas)', items:[
+    {id:'stem_midi', name:'Stem Komplex', dose:'2 gélules'}
+  ]},
+  { g:'21h00', items:[
+    {id:'mag', name:'Magnésium bisglycinate poudre', dose:'~300 mg', nonNeg:true},
+    {id:'theanine', name:'L-théanine', dose:'1 gél. 100 mg'},
+    {id:'glycine', name:'Glycine poudre', dose:'3 g'}
+  ]},
+  { g:'Post-effort (si séance)', items:[
+    {id:'creatine', name:'Créatine Creapure', dose:'3–5 g', nonNeg:true}
+  ]}
+];
+const RUN_PACE_ROADMAP = [
+  { from:'2026-08-01', to:'2026-08-31', pace:"5'50/km", label:'Redémarrage propre' },
+  { from:'2026-09-01', to:'2026-09-30', pace:"5'40/km", label:'Ancrer volume et qualité' },
+  { from:'2026-10-01', to:'2026-10-31', pace:"5'30/km", label:'Test chronométré 10 km' },
+  { from:'2026-11-01', to:'2026-12-31', pace:"5'30/km stabilisé", label:'Confirmation' }
+];
+const RUN_VOLUME_ROADMAP = [
+  { from:'2026-08-01', to:'2026-08-31', min:20, max:25, label:'Redémarrage propre' },
+  { from:'2026-09-01', to:'2026-10-31', min:25, max:30, label:'Ancrer volume et qualité' },
+  { from:'2026-11-01', to:'2026-12-31', min:25, max:30, label:'Consolidation' }
+];
+const PROTEIN_WEEKLY_TARGETS = {
+  'Poisson gras (saumon, maquereau, sardine, hareng)': { min:2, max:2, label:'2×/semaine — cible' },
+  'Poisson blanc': { min:1, max:2, label:'1–2×/semaine' },
+  'Viande rouge': { min:0, max:2, label:'≤ 2×/semaine' },
+  'Œufs': { min:0, max:7, label:'≤ 1–2/jour' }
+};
+
+/* ============ ÉTAT ============ */
+let ALL_ENTRIES = {}; // date -> entry
+let CHART_RANGE = 14;
+let charts = {};
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtDateLabel(d){
+  return new Date(d+'T12:00:00').toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ============ STORAGE (localStorage — autonome, sur cet appareil) ============ */
+const LS_PREFIX = 'cadran_';
+function lsGet(key){
+  try{ const v = localStorage.getItem(LS_PREFIX+key); return v===null ? null : JSON.parse(v); }
+  catch(e){ return null; }
+}
+function lsSet(key, val){
+  try{ localStorage.setItem(LS_PREFIX+key, JSON.stringify(val)); return true; }
+  catch(e){ console.error('localStorage set error', e); return false; }
+}
+function lsDelete(key){ try{ localStorage.removeItem(LS_PREFIX+key); }catch(e){} }
+
+async function loadIndex(){
+  return lsGet('index') || [];
+}
+async function saveIndex(dates){
+  lsSet('index', dates);
+}
+async function loadAllEntries(){
+  const idx = await loadIndex();
+  const out = {};
+  for(const d of idx){
+    const v = lsGet('day:'+d);
+    if(v) out[d] = v;
+  }
+  return out;
+}
+async function saveEntry(date, entry){
+  lsSet('day:'+date, entry);
+  const idx = await loadIndex();
+  if(!idx.includes(date)){
+    idx.push(date); idx.sort();
+    await saveIndex(idx);
+  }
+  ALL_ENTRIES[date] = entry;
+}
+async function deleteEntry(date){
+  lsDelete('day:'+date);
+  const idx = (await loadIndex()).filter(d=>d!==date);
+  await saveIndex(idx);
+  delete ALL_ENTRIES[date];
+}
+
+/* ============ LOGIQUE CONSEIL DU JOUR ============ */
+function hrvDecision(hrv){
+  if(hrv < 30) return { level:'rust', label:'Repos', text:'HRV sous 30 ms — reporter la séance sportive quelle que soit la nuit. Priorité absolue à la récupération. Pas de café supplémentaire pour compenser.' };
+  if(hrv <= 37) return { level:'amber', label:'Zone 2 uniquement', text:'HRV entre 30 et 37 ms — maintenir la séance mais réduire l\'intensité de 20 %. Pas de fractionné, Zone 2 stricte (< 145 bpm).' };
+  return { level:'teal', label:'Programme nominal', text:'HRV au-dessus de 37 ms — programme nominal, même si la nuit a été fragmentée.' };
+}
+function computeAdvice(entry, dow){
+  const box = document.getElementById('adviceBody');
+  const dialVal = document.getElementById('dialVal');
+  const dialArc = document.getElementById('dialArc');
+  const CIRC = 477;
+
+  if(!entry || entry.hrv == null || entry.hrv === ''){
+    box.innerHTML = `<span class="tag teal">En attente</span><h3>Entre ta HRV du réveil pour démarrer</h3><p class="no-data">Aucune donnée enregistrée pour aujourd'hui — remplis le relevé du jour ci-dessous.</p>`;
+    dialVal.textContent = '—';
+    dialArc.setAttribute('stroke-dashoffset', CIRC);
+    return;
+  }
+  const hrv = parseFloat(entry.hrv);
+  const dec = hrvDecision(hrv);
+  const planned = WEEK_PLAN[dow];
+  const isHeavyNight = entry.alcohol === 'heavy';
+  const isLightAlcohol = entry.alcohol === 'light';
+
+  dialVal.textContent = hrv.toFixed(0);
+  const pct = Math.max(0, Math.min(1, hrv/60));
+  dialArc.setAttribute('stroke-dashoffset', CIRC - pct*CIRC);
+  dialArc.setAttribute('stroke', isHeavyNight ? '#C8623E' : (dec.level==='rust'?'#C8623E':dec.level==='amber'?'#E3A855':'#4BBFA6'));
+
+  const list = [];
+  if(isHeavyNight){
+    list.push('Nuit arrosée identifiée — la HRV/le sommeil bas d\'aujourd\'hui ont une cause connue, ce n\'est pas un signal d\'alarme à investiguer.');
+    list.push('Hydratation, repos, pas de séance aujourd\'hui. Ne pas rallonger le réveil de plus d\'1h pour ne pas décaler l\'horloge circadienne — micro-sieste de 20 min avant 14h si besoin plutôt qu\'une grasse matinée.');
+    list.push('Retour au plan nominal dès le prochain repas ou la prochaine séance — pas de compensation, pas de culpabilité (règle du 80/20). Un écart isolé n\'a aucun impact sur la tendance à 30 jours.');
+  } else {
+    list.push(`Prévu au planning : <strong>${planned}</strong>`);
+    if(dow===2) list.push('Semaine avec badminton → séance de qualité Runna remplacée par Zone 2.');
+    if(entry.sleepScore !== '' && entry.sleepScore != null){
+      const s = parseFloat(entry.sleepScore);
+      if(s < 30) list.push('Score sommeil profond bas — température chambre 17–19°C, coupure écran 22h00, magnésium 21h00 non négociable ce soir.');
+    }
+    if(entry.wakeups && parseFloat(entry.wakeups) >= 2){
+      list.push('Nuit fragmentée — micro-sieste possible avant 14h00 (20 min max), pas de caféine supplémentaire.');
+    }
+    if(entry.session === 'Runna Musculation' || entry.session === 'Runna qualité (fractionné/tempo)'){
+      list.push('Collation pain complet + protéine avant la séance si > 45 min. Créatine Creapure dans les 30 min post-effort.');
+    }
+    if(isLightAlcohol){
+      list.push('1–2 verres notés — impact généralement limité mais peut légèrement réduire le sommeil profond de la nuit suivante.');
+    }
+  }
+
+  const tagLevel = isHeavyNight ? 'rust' : dec.level;
+  const tagLabel = isHeavyNight ? 'Nuit arrosée — repos' : dec.label;
+  const headline = isHeavyNight ? 'Soirée arrosée hier — priorité récupération aujourd\'hui' : dec.text;
+
+  box.innerHTML = `
+    <span class="tag ${tagLevel}">${tagLabel}</span>
+    <h3>${headline}</h3>
+    <ul class="advice-list">${list.map(l=>`<li>${l}</li>`).join('')}</ul>
+  `;
+}
+
+/* ============ OBJECTIFS ============ */
+function avgLast(days, key){
+  const dates = Object.keys(ALL_ENTRIES).sort().slice(-days);
+  const vals = dates.map(d=>ALL_ENTRIES[d][key]).filter(v=>v!=='' && v!=null).map(parseFloat);
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function renderObjective(name, current, base, m3, m12, unit, higherIsBetter=true){
+  const lo = Math.min(base, m12), hi = Math.max(base, m12);
+  const span = hi-lo || 1;
+  const cur = current==null ? base : current;
+  let pct = ((cur-lo)/span)*100;
+  pct = Math.max(0, Math.min(100, pct));
+  const m3pct = Math.max(0,Math.min(100, ((m3-lo)/span)*100));
+  const curDisplay = current==null ? '—' : current.toFixed(1);
+  return `
+    <div class="obj">
+      <div class="obj-top">
+        <span class="name">${name}</span>
+        <span class="vals">${curDisplay}${unit} · base ${base}${unit} → 3 mois ${m3}${unit} → 12 mois ${m12}${unit}</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width:${pct}%"></div><div class="bar-marker" style="left:${m3pct}%"></div></div>
+    </div>`;
+}
+function renderObjectives(){
+  const hrvAvg = avgLast(7,'hrv');
+  const sleepAvg = avgLast(7,'sleepScore');
+  let html = '';
+  html += renderObjective('HRV moyenne (7 j)', hrvAvg, TARGETS.hrv.current, TARGETS.hrv.m3, TARGETS.hrv.m12, ' ms');
+  html += renderObjective('Score sommeil profond (7 j)', sleepAvg, TARGETS.sleep.current, TARGETS.sleep.m3, TARGETS.sleep.m12, '/100');
+  // running pace roadmap
+  const today = todayISO();
+  const roadmap = RUN_PACE_ROADMAP.find(r=> today>=r.from && today<=r.to);
+  html += `<div class="obj"><div class="obj-top"><span class="name">Allure course cible (roadmap 10 km &lt; 55 min)</span>
+    <span class="vals">${roadmap ? roadmap.pace+' — '+roadmap.label : 'hors période définie'}</span></div>
+    <div class="bar"><div class="bar-fill" style="width:100%;background:var(--panel-2);border:1px dashed var(--line);"></div></div></div>`;
+  document.getElementById('objectivesPanel').innerHTML = html;
+}
+
+/* ============ REGLES DU JOUR ============ */
+function renderRules(dow){
+  const items = NON_NEGOTIABLE.map((r,i)=>{
+    const isToday = (i===2||i===3); // mobilité & équilibre = quotidien, toujours "today"
+    return `<div class="rule-item ${isToday?'today':''}"><div class="dot"></div><div>${r}</div></div>`;
+  }).join('');
+  document.getElementById('rulesPanel').innerHTML = items;
+}
+
+/* ============ SUPPLEMENTS ============ */
+async function renderSupplements(){
+  const date = todayISO();
+  let checked = lsGet('supp:'+date) || {};
+
+  let html = '';
+  let total=0, done=0;
+  SUPPLEMENTS.forEach(group=>{
+    html += `<div class="supp-group"><div class="g-title">${group.g}</div>`;
+    group.items.forEach(it=>{
+      total++;
+      const isChecked = !!checked[it.id];
+      if(isChecked) done++;
+      html += `<div class="supp-item ${it.nonNeg?'non-neg':''}">
+        <input type="checkbox" id="supp_${it.id}" ${isChecked?'checked':''} onchange="toggleSupp('${it.id}')">
+        <span class="name">${it.name}</span>
+        <span class="dose">${it.dose}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('suppPanel').innerHTML = html;
+  document.getElementById('suppProgress').textContent = `${done}/${total} pris aujourd'hui`;
+}
+async function toggleSupp(id){
+  const date = todayISO();
+  let checked = lsGet('supp:'+date) || {};
+  checked[id] = document.getElementById('supp_'+id).checked;
+  lsSet('supp:'+date, checked);
+  renderSupplements();
+}
+
+/* ============ BILAN HEBDO ============ */
+function startOfWeek(d){
+  const dt = new Date(d+'T12:00:00');
+  const day = dt.getDay(); // 0=dim
+  const diff = (day===0? -6 : 1-day); // lundi
+  dt.setDate(dt.getDate()+diff);
+  return dt.toISOString().slice(0,10);
+}
+function renderWeekly(){
+  const today = todayISO();
+  const monday = startOfWeek(today);
+  const weekDates = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(monday+'T12:00:00'); d.setDate(d.getDate()+i);
+    weekDates.push(d.toISOString().slice(0,10));
+  }
+  const weekEntries = weekDates.map(d=>ALL_ENTRIES[d]).filter(Boolean);
+  const hrvVals = weekEntries.map(e=>parseFloat(e.hrv)).filter(v=>!isNaN(v));
+  const sleepVals = weekEntries.map(e=>parseFloat(e.sleepScore)).filter(v=>!isNaN(v));
+  const hrvAvg = hrvVals.length ? (hrvVals.reduce((a,b)=>a+b,0)/hrvVals.length) : null;
+  const sleepAvg = sleepVals.length ? (sleepVals.reduce((a,b)=>a+b,0)/sleepVals.length) : null;
+  const badminton = weekEntries.some(e=>e.session==='Badminton');
+  const charcuterieCount = weekEntries.filter(e=>e.charcuterie).length;
+  const lightAlcoholCount = weekEntries.filter(e=>e.alcohol==='light').length;
+  const heavyAlcoholCount = weekEntries.filter(e=>e.alcohol==='heavy').length;
+
+  // --- Volume d'entraînement (km, durée, règle des 10%) ---
+  const sumNum = (arr, key) => arr.reduce((s,e)=> s + (e[key]!=='' && e[key]!=null && !isNaN(parseFloat(e[key])) ? parseFloat(e[key]) : 0), 0);
+  const weekKm = sumNum(weekEntries, 'distance');
+  const weekDurationMin = sumNum(weekEntries, 'duration');
+  const prevMonday = new Date(monday+'T12:00:00'); prevMonday.setDate(prevMonday.getDate()-7);
+  const prevWeekDates = [];
+  for(let i=0;i<7;i++){ const d = new Date(prevMonday); d.setDate(d.getDate()+i); prevWeekDates.push(d.toISOString().slice(0,10)); }
+  const prevWeekEntries = prevWeekDates.map(d=>ALL_ENTRIES[d]).filter(Boolean);
+  const prevWeekKm = sumNum(prevWeekEntries, 'distance');
+  const kmIncreasePct = prevWeekKm>0 ? ((weekKm-prevWeekKm)/prevWeekKm*100) : null;
+  const over10Rule = kmIncreasePct!==null && kmIncreasePct>10;
+  const volumeRoadmap = RUN_VOLUME_ROADMAP.find(r=> todayISO()>=r.from && todayISO()<=r.to);
+  const hrvDropStreak = (()=>{
+    const sortedDates = Object.keys(ALL_ENTRIES).sort().slice(-4);
+    if(sortedDates.length<4) return false;
+    const vals = sortedDates.map(d=>parseFloat(ALL_ENTRIES[d].hrv));
+    if(vals.some(v=>isNaN(v))) return false;
+    return vals[0]>vals[1] && vals[1]>vals[2] && vals[2]>vals[3];
+  })();
+
+  // --- Conformité protocole (Tableau de bord hebdomadaire du manuel) ---
+  const nEntries = weekEntries.length || 1;
+  const count = key => weekEntries.filter(e=>e[key]).length;
+  const coherenceCount = count('coherence');
+  const gowodCount = count('gowod');
+  const coupureCount = count('coupure');
+  const mobiliteCount = count('mobilite');
+  const legumesCount = count('legumes');
+  const nuitsCourtesCount = weekEntries.filter(e=>e.sleepDur!=='' && e.sleepDur!=null && parseFloat(e.sleepDur)<5).length;
+  const poissonGrasCount = weekEntries.filter(e=>e.proteinSource==='Poisson gras (saumon, maquereau, sardine, hareng)').length;
+  const runnaMuscuCount = weekEntries.filter(e=>e.session==='Runna Musculation').length;
+  const runnaPlannedDays = weekDates.filter(d=>{
+    const dow = new Date(d+'T12:00:00').getDay();
+    return WEEK_PLAN[dow] && WEEK_PLAN[dow].includes('Runna');
+  }).length;
+  const runnaDoneCount = weekEntries.filter(e=>e.session && e.session.includes('Runna')).length;
+
+  const COMPLIANCE = [
+    { label:'Coupure numérique 22h00 respectée', val:`${coupureCount}/${nEntries}`, ok: coupureCount>=5, target:'≥ 5/7' },
+    { label:'Cohérence cardiaque réalisée (21h15)', val:`${coherenceCount}/${nEntries}`, ok: coherenceCount>=5, target:'≥ 5/7' },
+    { label:'GoWod réalisé (21h30)', val:`${gowodCount}/${nEntries}`, ok: gowodCount>=4, target:'≥ 4/7' },
+    { label:'Mobilité cheville droite réalisée', val:`${mobiliteCount}/${nEntries}`, ok: mobiliteCount>=5, target:'≥ 5/7' },
+    { label:'Légumes verts au dîner', val:`${legumesCount}/${nEntries}`, ok: legumesCount>=5, target:'≥ 5/7' },
+    { label:'Nuits < 5h de sommeil', val:`${nuitsCourtesCount}/${nEntries}`, ok: nuitsCourtesCount<=1, target:'≤ 1/7' },
+    { label:'Charcuterie', val:`${charcuterieCount}/${nEntries}`, ok: charcuterieCount<=3, target:'≤ 3/7' },
+    { label:'Poisson gras dans la semaine', val:`${poissonGrasCount} repas`, ok: poissonGrasCount>=2, target:'≥ 2 repas' },
+    { label:'Séances Runna réalisées / prévues', val:`${runnaDoneCount}/${runnaPlannedDays||'—'}`, ok: runnaPlannedDays? (runnaDoneCount/runnaPlannedDays)>=2/3 : null, target:'≥ 2/3' },
+    { label:'Séances Runna Musculation réalisées', val:`${runnaMuscuCount}/4`, ok: runnaMuscuCount>=3, target:'≥ 3/4' }
+  ];
+  const complianceRows = COMPLIANCE.map(c=>`<tr><td>${c.label}</td><td class="mono">${c.val}</td><td class="mono">${c.target}</td><td>${c.ok===null?'—':(c.ok?'✅':'⚠️')}</td></tr>`).join('');
+
+  // --- Corrélation simple : leviers manqués vs stagnation HRV/sommeil ---
+  const missedLevers = COMPLIANCE.filter(c=>c.ok===false).map(c=>c.label);
+  let correlationNote = '';
+  if(missedLevers.length && (hrvAvg!==null || sleepAvg!==null)){
+    const hrvFlat = hrvAvg!==null && hrvAvg <= TARGETS.hrv.current + 2;
+    const sleepFlat = sleepAvg!==null && sleepAvg <= TARGETS.sleep.current + 5;
+    if(hrvFlat || sleepFlat){
+      correlationNote = `<p style="color:var(--amber);font-size:13.5px;margin-top:14px;">⚠️ HRV/sommeil proches de la baseline cette semaine, et ${missedLevers.length} levier(s) de récupération non tenu(s) : ${missedLevers.join(', ')}. C'est probablement lié — ce sont les premiers leviers à resserrer avant d'en chercher d'autres.</p>`;
+    }
+  }
+
+  let proteinRows = Object.entries(PROTEIN_WEEKLY_TARGETS).map(([k,t])=>{
+    const tallies = {};
+    weekEntries.forEach(e=>{ if(e.proteinSource) tallies[e.proteinSource]=(tallies[e.proteinSource]||0)+1; });
+    const cnt = tallies[k]||0;
+    const over = cnt > t.max;
+    return `<tr><td class="mono">${cnt}×</td><td>${k}</td><td>${t.label}</td><td>${over?'⚠️ au-dessus de la cible':'✅'}</td></tr>`;
+  }).join('');
+
+  document.getElementById('weeklyPanel').innerHTML = `
+    <table style="margin-bottom:16px;">
+      <thead><tr><th>Domaine</th><th>Cette semaine</th><th>Cible</th></tr></thead>
+      <tbody>
+        <tr><td>HRV moyenne</td><td class="mono">${hrvAvg!==null?hrvAvg.toFixed(1):'—'} ms</td><td class="mono">stable ou en hausse (&gt; 42 à 3 mois)</td></tr>
+        <tr><td>Score sommeil profond moyen</td><td class="mono">${sleepAvg!==null?sleepAvg.toFixed(1):'—'}/100</td><td class="mono">&gt; 50/100 à 3 mois</td></tr>
+        <tr><td>Badminton fait cette semaine</td><td>${badminton?'✅ oui':'— non'}</td><td>1×/semaine (mardi)</td></tr>
+        <tr><td>Alcool léger (1–2 verres)</td><td class="mono">${lightAlcoholCount}×</td><td class="mono">informatif — pas de cible stricte</td></tr>
+        <tr><td>Soirées arrosées</td><td class="mono">${heavyAlcoholCount}×</td><td class="mono">${heavyAlcoholCount>0?'à mettre en regard de la HRV/sommeil ce jour-là':'—'}</td></tr>
+      </tbody>
+    </table>
+
+    <div class="g-title" style="color:var(--muted-2);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Volume d'entraînement</div>
+    <table style="margin-bottom:6px;">
+      <thead><tr><th>Indicateur</th><th>Cette semaine</th><th>Cible / repère</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Kilométrage total</td><td class="mono">${weekKm.toFixed(1)} km</td><td class="mono">${volumeRoadmap?volumeRoadmap.min+'–'+volumeRoadmap.max+' km/sem ('+volumeRoadmap.label+')':'—'}</td><td>${volumeRoadmap? (weekKm>=volumeRoadmap.min && weekKm<=volumeRoadmap.max*1.1 ? '✅':'⚠️') : '—'}</td></tr>
+        <tr><td>Évolution vs semaine précédente</td><td class="mono">${prevWeekKm>0?(kmIncreasePct>=0?'+':'')+kmIncreasePct.toFixed(0)+' %':'—'}</td><td class="mono">≤ +10 % (règle des 10 %)</td><td>${prevWeekKm>0 ? (over10Rule?'⚠️':'✅') : '—'}</td></tr>
+        <tr><td>Temps d'entraînement total</td><td class="mono">${weekDurationMin>0 ? Math.floor(weekDurationMin/60)+'h'+String(weekDurationMin%60).padStart(2,'0') : '—'}</td><td class="mono">informatif</td><td>—</td></tr>
+      </tbody>
+    </table>
+    ${over10Rule ? `<p style="color:var(--rust);font-size:13.5px;margin-top:10px;">⚠️ Augmentation du volume &gt; 10 % par rapport à la semaine précédente — risque de surentraînement selon la règle des 10 % du manuel. Envisager de plafonner la charge cette semaine.</p>` : ''}
+    ${hrvDropStreak ? `<p style="color:var(--rust);font-size:13.5px;margin-top:10px;">⚠️ HRV en baisse sur les 4 derniers relevés (tendance 3 jours consécutifs) — signal d'alerte du manuel : réduire une séance Runna cette semaine.</p>` : ''}
+
+    <div class="g-title" style="color:var(--muted-2);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Conformité protocole — Tableau de bord hebdomadaire</div>
+    <table style="margin-bottom:6px;">
+      <thead><tr><th>Levier</th><th>Réalisé</th><th>Cible</th><th></th></tr></thead>
+      <tbody>${complianceRows}</tbody>
+    </table>
+    ${correlationNote}
+
+    <div class="g-title" style="color:var(--muted-2);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:18px 0 8px;">Fréquences protéines</div>
+    <table><thead><tr><th>Compte</th><th>Source</th><th>Cible</th><th>Statut</th></tr></thead><tbody>${proteinRows}</tbody></table>
+  `;
+}
+
+/* ============ HISTORIQUE + GRAPHIQUES ============ */
+function renderHistory(){
+  const dates = Object.keys(ALL_ENTRIES).sort().reverse();
+  document.getElementById('historyBody').innerHTML = dates.map(d=>{
+    const e = ALL_ENTRIES[d];
+    return `<tr>
+      <td>${d}</td>
+      <td>${e.hrv||'—'}</td>
+      <td>${e.sleepScore||'—'}</td>
+      <td>${e.weight||'—'}</td>
+      <td style="font-family:'IBM Plex Sans',sans-serif;">${e.session||'—'}</td>
+      <td>${e.calories||'—'}</td>
+      <td><span class="del-link" onclick="removeEntry('${d}')">supprimer</span></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="font-family:'IBM Plex Sans',sans-serif;color:var(--muted-2);">Aucune donnée encore enregistrée.</td></tr>`;
+}
+async function removeEntry(date){
+  if(!confirm('Supprimer le relevé du '+date+' ?')) return;
+  await deleteEntry(date);
+  renderAll();
+}
+
+function renderCharts(){
+  const dates = Object.keys(ALL_ENTRIES).sort().slice(-CHART_RANGE);
+  const labels = dates.map(d=>d.slice(5));
+  const hrv = dates.map(d=>ALL_ENTRIES[d].hrv!=='' && ALL_ENTRIES[d].hrv!=null ? parseFloat(ALL_ENTRIES[d].hrv) : null);
+  const sleep = dates.map(d=>ALL_ENTRIES[d].sleepScore!=='' && ALL_ENTRIES[d].sleepScore!=null ? parseFloat(ALL_ENTRIES[d].sleepScore) : null);
+  const weight = dates.map(d=>ALL_ENTRIES[d].weight!=='' && ALL_ENTRIES[d].weight!=null ? parseFloat(ALL_ENTRIES[d].weight) : null);
+
+  ['chartHrv','chartSleep','chartWeight'].forEach(id=>{ if(charts[id]) charts[id].destroy(); });
+
+  charts.chartHrv = new Chart(document.getElementById('chartHrv'), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'HRV (ms)', data:hrv, borderColor:'#4BBFA6', backgroundColor:'#4BBFA622', tension:0.3, spanGaps:true, pointRadius:2 }]},
+    options:{ plugins:{legend:{display:false}, title:{display:true,text:'HRV (ms)', color:'#E9EDEC', font:{family:'IBM Plex Mono',size:12}}},
+      scales:{ x:{ticks:{color:'#5E6E76',font:{size:10}},grid:{color:'#28343B'}}, y:{ticks:{color:'#5E6E76',font:{size:10}},grid:{color:'#28343B'}} } }
+  });
+  charts.chartSleep = new Chart(document.getElementById('chartSleep'), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'Sommeil profond (/100)', data:sleep, borderColor:'#E3A855', backgroundColor:'#E3A85522', tension:0.3, spanGaps:true, pointRadius:2 }]},
+    options:{ plugins:{legend:{display:false}, title:{display:true,text:'Sommeil profond (/100)', color:'#E9EDEC', font:{family:'IBM Plex Mono',size:12}}},
+      scales:{ x:{ticks:{color:'#5E6E76',font:{size:10}},grid:{color:'#28343B'}}, y:{ticks:{color:'#5E6E76',font:{size:10}},grid:{color:'#28343B'}} } }
+  });
+  charts.chartWeight = new Chart(document.getElementById('chartWeight'), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'Poids (kg)', data:weight, borderColor:'#D8C48A', backgroundColor:'#D8C48A22', tension:0.3, spanGaps:true, pointRadius:2 }]},
+    options:{ plugins:{legend:{display:false}, title:{display:true,text:'Poids (kg)', color:'#E9EDEC', font:{family:'IBM Plex Mono',size:12}}},
+      scales:{ x:{ticks:{color:'#5E6E76',font:{size:10}},grid:{color:'#28343B'}}, y:{ticks:{color:'#5E6E76',font:{size:10}},grid:{color:'#28343B'}} } }
+  });
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>{
+    p.style.display = (p.getAttribute('data-tab')===tab) ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-tab')===tab);
+  });
+  if(tab==='historique'){
+    renderCharts(); // recréer les graphiques une fois le conteneur visible (dimensions correctes)
+  }
+}
+
+function setRange(r, btn){
+  CHART_RANGE = r;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCharts();
+}
+
+/* ============ FORMULAIRE ============ */
+function fieldIds(){
+  return ['hrv','sleepScore','sleepDur','wakeups','restHR','cadence','weight','cal','prot','carbs','fat'];
+}
+function toggleBedtimeField(){
+  const heavy = document.getElementById('in_alcohol').value === 'heavy';
+  document.getElementById('bedtimeField').style.display = heavy ? 'block' : 'none';
+}
+function loadToday(){
+  const date = todayISO();
+  const e = ALL_ENTRIES[date] || {};
+  document.getElementById('in_hrv').value = e.hrv ?? '';
+  document.getElementById('in_sleepScore').value = e.sleepScore ?? '';
+  document.getElementById('in_sleepDur').value = e.sleepDur ?? '';
+  document.getElementById('in_wakeups').value = e.wakeups ?? '';
+  document.getElementById('in_sleepLight').value = e.sleepLight ?? '';
+  document.getElementById('in_sleepRem').value = e.sleepRem ?? '';
+  document.getElementById('in_restHR').value = e.restHR ?? '';
+  document.getElementById('in_cadence').value = e.cadence ?? '';
+  document.getElementById('in_distance').value = e.distance ?? '';
+  document.getElementById('in_duration').value = e.duration ?? '';
+  document.getElementById('in_weight').value = e.weight ?? '';
+  document.getElementById('in_cal').value = e.calories ?? '';
+  document.getElementById('in_prot').value = e.protein ?? '';
+  document.getElementById('in_carbs').value = e.carbs ?? '';
+  document.getElementById('in_fat').value = e.fat ?? '';
+  document.getElementById('in_session').value = e.session ?? '';
+  document.getElementById('in_proteinSource').value = e.proteinSource ?? '';
+  document.getElementById('in_charcuterie').checked = !!e.charcuterie;
+  document.getElementById('in_alcohol').value = e.alcohol ?? 'none';
+  document.getElementById('in_bedtime').value = e.bedtime ?? '';
+  toggleBedtimeField();
+  document.getElementById('in_coherence').checked = !!e.coherence;
+  document.getElementById('in_gowod').checked = !!e.gowod;
+  document.getElementById('in_coupure').checked = !!e.coupure;
+  document.getElementById('in_mobilite').checked = !!e.mobilite;
+  document.getElementById('in_legumes').checked = !!e.legumes;
+  showToast('Relevé du jour rechargé');
+}
+async function saveToday(){
+  const date = todayISO();
+  const entry = {
+    hrv: document.getElementById('in_hrv').value,
+    sleepScore: document.getElementById('in_sleepScore').value,
+    sleepDur: document.getElementById('in_sleepDur').value,
+    wakeups: document.getElementById('in_wakeups').value,
+    sleepLight: document.getElementById('in_sleepLight').value,
+    sleepRem: document.getElementById('in_sleepRem').value,
+    restHR: document.getElementById('in_restHR').value,
+    cadence: document.getElementById('in_cadence').value,
+    distance: document.getElementById('in_distance').value,
+    duration: document.getElementById('in_duration').value,
+    weight: document.getElementById('in_weight').value,
+    calories: document.getElementById('in_cal').value,
+    protein: document.getElementById('in_prot').value,
+    carbs: document.getElementById('in_carbs').value,
+    fat: document.getElementById('in_fat').value,
+    session: document.getElementById('in_session').value,
+    proteinSource: document.getElementById('in_proteinSource').value,
+    charcuterie: document.getElementById('in_charcuterie').checked,
+    alcohol: document.getElementById('in_alcohol').value,
+    bedtime: document.getElementById('in_bedtime').value,
+    coherence: document.getElementById('in_coherence').checked,
+    gowod: document.getElementById('in_gowod').checked,
+    coupure: document.getElementById('in_coupure').checked,
+    mobilite: document.getElementById('in_mobilite').checked,
+    legumes: document.getElementById('in_legumes').checked
+  };
+  try{
+    await saveEntry(date, entry);
+    showToast('Relevé enregistré');
+    renderAll();
+  }catch(err){
+    showToast('Erreur d\'enregistrement');
+    console.error(err);
+  }
+}
+
+/* ============ MONICA (IA) ============ */
+function buildProtocolContext(){
+  return `Tu es Monica, coach biohacking personnel. Voici les repères du protocole de l'utilisateur (extraits de son Manuel de Biohacking Personnel v2, août 2026) :
+- HRV : actuelle 38 ms, cible 3 mois > 42 ms, cible 12 mois > 48 ms. Règle : HRV < 30 ms → repos ; 30-37 ms → Zone 2 uniquement (réduire intensité 20%, pas de fractionné) ; > 37 ms → programme nominal.
+- Sommeil profond (score Polar) : baseline 13/100, cible 3 mois > 50/100, cible 12 mois > 70/100. Leviers : coucher 22h30-23h00, coupure écrans 22h00, température chambre 17-19°C, magnésium bisglycinate 21h00 (non négociable).
+- Planning hebdo : lundi Runna Musculation + Runna Z2, mardi Badminton 2h, mercredi Runna Musculation, jeudi Runna Musculation + Runna Z2, vendredi repos, samedi sortie longue Runna, dimanche repos actif/mobilité.
+- Course à pied : objectif 10 km sous 55 min, cadence cible 172-175 spm (actuelle 165), SV1 cible > 55% VO2max (actuel 45%).
+- Force : tractions cible 10-12 reps (actuel 8) à 3 mois.
+- Règle du 80/20 : après un écart, retour au plan nominal dès le repas/séance suivante, pas de compensation, pas de culpabilité — la tendance sur 30 jours prime.
+- Alcool : l'utilisateur note occasionnellement 1-2 verres (sorties/restos entre amis, ~1×/semaine) et, plus rarement, de grosses soirées (retour à 4h-5h du matin). Chaque entrée du journal peut contenir un champ "alcohol" (none/light/heavy) et parfois "bedtime". Une soirée arrosée fait chuter HRV et sommeil profond de façon attendue et non alarmante — ne jamais culpabiliser l'utilisateur à ce sujet, appliquer la règle du 80/20, et ne pas confondre une baisse ponctuelle expliquée par une soirée avec une vraie dérive du protocole à traiter comme un signal d'alarme.
+- Routine du soir (récupération) : chaque entrée peut aussi contenir des booléens coherence (cohérence cardiaque 21h15), gowod (GoWod 21h30), coupure (coupure numérique 22h00), mobilite (mobilité cheville), legumes (légumes verts au dîner). Quand on te demande pourquoi la HRV ou le sommeil stagnent, regarde en priorité si ces leviers sont régulièrement manqués sur les derniers jours avant de chercher une autre explication — c'est souvent la cause la plus probable et la plus actionnable.
+- Volume d'entraînement : chaque entrée peut contenir "distance" (km) et "duration" (min) pour la séance du jour. Roadmap kilométrage hebdo : 20-25 km/sem en août 2026, 25-30 km/sem de septembre à décembre. Règle des 10% : ne jamais augmenter le volume hebdo de plus de 10% par rapport à la semaine précédente. Signal d'alerte manuel : HRV en baisse 3 jours consécutifs → réduire une séance Runna. Douleurs tendineuses cheville/genou → repos 48h et consultation.
+- Sommeil détaillé : en plus du score sommeil profond Polar (/100), les entrées peuvent contenir sleepLight (%) et sleepRem (%) — les stades de sommeil léger et REM en pourcentage du temps de sommeil total. "wakeups" est un nombre de réveils nocturnes (pas un pourcentage). "sleepDur" est la durée de sommeil nette, réveils déjà déduits.
+Réponds en français, de façon concise et concrète (5-8 phrases maximum), dans le ton d'un coach direct et bienveillant. Ne donne jamais de conseil médical ou de diagnostic — reste sur le pilotage du protocole (sommeil, entraînement, récupération, nutrition non médicale).`;
+}
+/* ============ RÉGLAGES IA (clé API personnelle) ============ */
+function loadSettings(){
+  return lsGet('settings') || { provider:'anthropic', model:'', apiKey:'' };
+}
+function saveSettingsForm(){
+  const provider = document.getElementById('set_provider').value;
+  const model = document.getElementById('set_model').value.trim();
+  const apiKey = document.getElementById('set_apikey').value.trim();
+  lsSet('settings', { provider, model, apiKey });
+  showToast('Réglages enregistrés');
+}
+function loadSettingsForm(){
+  const s = loadSettings();
+  document.getElementById('set_provider').value = s.provider || 'anthropic';
+  document.getElementById('set_model').value = s.model || '';
+  document.getElementById('set_apikey').value = s.apiKey || '';
+  updateModelPlaceholder();
+}
+function updateModelPlaceholder(){
+  const provider = document.getElementById('set_provider').value;
+  const ph = {
+    anthropic: 'claude-sonnet-5',
+    openrouter: 'anthropic/claude-sonnet-4.5',
+    openai: 'gpt-4o-mini'
+  };
+  document.getElementById('set_model').placeholder = ph[provider] || '';
+}
+async function callAI(systemPrompt, userPrompt){
+  const s = loadSettings();
+  if(!s.apiKey) throw new Error('Clé API manquante — configure-la dans l\'onglet Réglages.');
+
+  if(s.provider === 'anthropic'){
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': s.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: s.model || 'claude-sonnet-5',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role:'user', content:userPrompt }]
+      })
+    });
+    if(!res.ok){ const t = await res.text(); throw new Error('Erreur API ('+res.status+') : '+t.slice(0,300)); }
+    const data = await res.json();
+    const text = (data.content||[]).map(b=>b.text||'').join('\n').trim();
+    if(!text) throw new Error('Réponse vide.');
+    return text;
+  }
+
+  // OpenRouter / OpenAI — format chat completions
+  const endpoint = s.provider === 'openrouter'
+    ? 'https://openrouter.ai/api/v1/chat/completions'
+    : 'https://api.openai.com/v1/chat/completions';
+  const headers = { 'Content-Type':'application/json', 'Authorization':'Bearer '+s.apiKey };
+  if(s.provider === 'openrouter'){
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'Cadran';
+  }
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: s.model || (s.provider==='openrouter' ? 'anthropic/claude-sonnet-4.5' : 'gpt-4o-mini'),
+      messages: [{ role:'system', content: systemPrompt }, { role:'user', content: userPrompt }],
+      temperature: 0.4
+    })
+  });
+  if(!res.ok){ const t = await res.text(); throw new Error('Erreur API ('+res.status+') : '+t.slice(0,300)); }
+  const data = await res.json();
+  const content = data && data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : null;
+  if(!content) throw new Error('Réponse vide ou format inattendu.');
+  return content;
+}
+
+async function askMonica(){
+  const btn = document.getElementById('monicaBtn');
+  const answerBox = document.getElementById('monicaAnswer');
+  const question = document.getElementById('monicaQuestion').value.trim();
+  const today = todayISO();
+
+  const recentDates = Object.keys(ALL_ENTRIES).sort().slice(-14);
+  const recentData = recentDates.map(d=>({date:d, ...ALL_ENTRIES[d]}));
+
+  btn.disabled = true; btn.textContent = '⏳ Analyse en cours…';
+  answerBox.style.display = 'block';
+  answerBox.textContent = 'Monica réfléchit…';
+
+  const userPrompt = question
+    ? `Données des 14 derniers jours (JSON) : ${JSON.stringify(recentData)}\n\nQuestion de l'utilisateur : ${question}`
+    : `Données des 14 derniers jours (JSON) : ${JSON.stringify(recentData)}\n\nDonne un commentaire sur la journée d'aujourd'hui (${today}) et la tendance récente, avec 1-2 conseils concrets pour demain.`;
+
+  try{
+    const text = await callAI(buildProtocolContext(), userPrompt);
+    answerBox.textContent = text;
+  }catch(err){
+    console.error(err);
+    answerBox.textContent = "Erreur : " + err.message;
+  }finally{
+    btn.disabled = false; btn.textContent = '🤖 Demander à Monica';
+  }
+}
+
+/* ============ IMPRESSION ============ */
+function printReport(){
+  const dates = Object.keys(ALL_ENTRIES).sort();
+  const rows = dates.map(d=>{
+    const e = ALL_ENTRIES[d];
+    return `<tr>
+      <td>${d}</td><td>${e.hrv||''}</td><td>${e.sleepScore||''}</td><td>${e.sleepDur||''}</td>
+      <td>${e.wakeups||''}</td><td>${e.sleepLight||''}</td><td>${e.sleepRem||''}</td><td>${e.restHR||''}</td><td>${e.weight||''}</td>
+      <td>${e.calories||''}</td><td>${e.protein||''}</td><td>${e.carbs||''}</td><td>${e.fat||''}</td>
+      <td>${e.session||''}</td><td>${e.distance||''}</td><td>${e.duration||''}</td><td>${e.proteinSource||''}</td><td>${e.charcuterie?'oui':''}</td>
+      <td>${e.alcohol==='heavy'?'soirée':(e.alcohol==='light'?'léger':'')}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('printArea').innerHTML = `
+    <h1>Cadran — Relevé de suivi biohacking</h1>
+    <div class="meta">Exporté le ${new Date().toLocaleDateString('fr-FR')} — ${dates.length} jour(s) enregistré(s) — à faire analyser par Monica / Claude</div>
+    <h2>Relevés quotidiens</h2>
+    <table>
+      <thead><tr><th>Date</th><th>HRV</th><th>Sommeil/100</th><th>Durée</th><th>Réveils</th><th>Léger%</th><th>REM%</th><th>FC repos</th><th>Poids</th><th>Cal</th><th>Prot g</th><th>Gluc g</th><th>Lip g</th><th>Séance</th><th>Km</th><th>Durée séance</th><th>Prot. source</th><th>Charcuterie</th><th>Alcool</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="18">Aucune donnée enregistrée.</td></tr>'}</tbody>
+    </table>
+  `;
+  window.print();
+}
+
+const MEAL_PORTIONS = {
+  matin: {
+    label: 'Petit-déjeuner',
+    note: "Référence macro manuel (base avoine) : 472 kcal / 35g glucides / 37g protéines / 19g lipides. Ta version œufs/pain/fromage — repères ci-dessous.",
+    items: [
+      { name:'Œufs', grams:100, per:'2 œufs', scalable:true },
+      { name:'Pain', grams:80, note:'complet de préférence', scalable:true },
+      { name:'Fromage OU avocat', grams:30, note:'avocat ≈ 50g si remplacement', scalable:true },
+      { name:'Jambon / bacon', grams:50, note:'occasionnel — compte comme charcuterie, à limiter', scalable:true }
+    ]
+  },
+  midi: {
+    label: 'Midi — tartine',
+    note: "Référence manuel : 660 kcal / 48g glucides / 52g protéines / 27g lipides.",
+    items: [
+      { name:'Pain complet', grams:100, scalable:true },
+      { name:'Protéine (charcuterie 80g OU sardines/thon 100g OU 2 œufs)', grams:90, scalable:true },
+      { name:'Légume / crudité', grams:0, note:'à volonté', scalable:false },
+      { name:'Huile d\'olive', grams:5, note:'1 c.à.c.', scalable:true }
+    ]
+  },
+  soir: {
+    label: 'Soir — dîner',
+    note: "Référence manuel : 566 kcal / 41g glucides / 44g protéines / 23g lipides.",
+    items: [
+      { name:'Protéine (viande ou poisson)', grams:150, note:'vise le bas de la fourchette (150 plutôt que 200)', scalable:true },
+      { name:'Féculent cru (riz, quinoa, lentilles, pomme de terre)', grams:57, note:'55–60g cru', scalable:true },
+      { name:'Légumes verts', grams:325, note:'300–350g', scalable:true },
+      { name:'Huile d\'olive', grams:10, note:'1 c.à.s. — arroser pour absorption caroténoïdes', scalable:true }
+    ]
+  }
+};
+function renderPortionGuide(){
+  const type = document.getElementById('in_mealType').value;
+  const portions = Math.max(1, parseInt(document.getElementById('in_portions').value)||1);
+  const meal = MEAL_PORTIONS[type];
+  const rows = meal.items.map(it=>{
+    const total = it.scalable ? Math.round(it.grams*portions) : it.grams;
+    const display = it.grams===0 ? '—' : `${total} g`;
+    return `<tr>
+      <td>${it.name}</td>
+      <td class="mono">${display}</td>
+      <td style="font-family:'IBM Plex Sans',sans-serif;color:var(--muted);font-size:12.5px;">${it.note||(it.per||'')}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('portionGuideOut').innerHTML = `
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 12px;">${meal.note}</p>
+    <table>
+      <thead><tr><th>Composant</th><th>${portions>1?'Total pour '+portions+' portions':'Quantité'}</th><th>Note</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${type!=='matin' ? '<p style="color:var(--muted-2);font-size:12px;margin:10px 0 0;">Rappel : charcuterie ≤ 3–4×/semaine (cible 1–2×), viande rouge ≤ 2×/semaine — voir le bilan hebdomadaire.</p>' : ''}
+  `;
+}
+
+/* ============ INIT ============ */
+function renderAll(){
+  const today = todayISO();
+  const dow = new Date(today+'T12:00:00').getDay();
+  computeAdvice(ALL_ENTRIES[today], dow);
+  renderObjectives();
+  renderRules(dow);
+  renderSupplements();
+  renderWeekly();
+  renderHistory();
+  renderCharts();
+  renderPortionGuide();
+}
+
+(async function init(){
+  document.getElementById('todayLabel').textContent = fmtDateLabel(todayISO());
+  try{
+    ALL_ENTRIES = await loadAllEntries();
+  }catch(e){
+    console.error('Erreur de chargement du stockage', e);
+    ALL_ENTRIES = {};
+  }
+  loadToday();
+  renderAll();
+  loadSettingsForm();
+})();
+</script>
+</body>
+</html>
